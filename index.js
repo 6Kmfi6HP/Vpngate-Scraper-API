@@ -46,7 +46,7 @@ if (!fs.existsSync('./json')) {
 }
 
 // Function to make multiple requests and deduplicate results
-async function getMultipleVPNLists(times = 5) {
+async function getMultipleVPNLists(times = 10) {
     console.log(`Starting to fetch VPN data ${times} times...`);
     const allServers = new Map(); // Using Map to store unique servers by hostname
     const allCountries = {};
