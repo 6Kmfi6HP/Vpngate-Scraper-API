@@ -31,7 +31,6 @@ const generateReadme = (vpnList) => {
     fs.writeFileSync('README.md', content);
 }
 
-
 const getDate = (unix) => {
     return `${new Date(unix).toUTCString()}`;
 }
@@ -41,22 +40,121 @@ if (!fs.existsSync('./configs')) {
     fs.mkdirSync('./configs');
 }
 
-getVpnList()
-    .then(vpnList => {
-        servers = vpnList.servers;
-        countries = vpnList.countries;
-        lastUpdated = Date.now();
+// Make sure the json directory exists
+if (!fs.existsSync('./json')) {
+    fs.mkdirSync('./json');
+}
 
-        fs.writeFileSync("json/data.json",JSON.stringify([vpnList,lastUpdated], null, 4),"utf-8")
+// Function to make multiple requests and deduplicate results
+async function getMultipleVPNLists(times = 5) {
+    console.log(`Starting to fetch VPN data ${times} times...`);
+    const allServers = new Map(); // Using Map to store unique servers by hostname
+    const allCountries = {};
+    let totalServersFound = 0;
+    const duplicateStats = new Map(); // Track how many times each server appears
+    
+    for (let i = 0; i < times; i++) {
+        try {
+            console.log(`\nFetching attempt ${i + 1}/${times}...`);
+            const vpnList = await getVpnList();
+            
+            // Count total servers in this batch
+            const currentBatchSize = vpnList.servers.length;
+            totalServersFound += currentBatchSize;
+            console.log(`Found ${currentBatchSize} servers in attempt ${i + 1}`);
+            
+            // Track duplicates and add servers to Map
+            vpnList.servers.forEach(server => {
+                if (!duplicateStats.has(server.hostname)) {
+                    duplicateStats.set(server.hostname, 1);
+                } else {
+                    duplicateStats.set(server.hostname, duplicateStats.get(server.hostname) + 1);
+                }
+                allServers.set(server.hostname, server);
+            });
+            
+            // Merge countries
+            Object.assign(allCountries, vpnList.countries);
+            
+            // Print current statistics
+            const currentUniqueCount = allServers.size;
+            const currentDuplicateCount = totalServersFound - currentUniqueCount;
+            console.log(`Current Statistics:`);
+            console.log(`- Total servers found so far: ${totalServersFound}`);
+            console.log(`- Unique servers: ${currentUniqueCount}`);
+            console.log(`- Duplicate servers: ${currentDuplicateCount}`);
+            
+            // Wait for 1 second between requests to avoid rate limiting
+            if (i < times - 1) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        } catch (error) {
+            console.error(`Error in attempt ${i + 1}:`, error);
+        }
+    }
+    
+    // Convert Map back to array
+    const deduplicatedServers = Array.from(allServers.values());
+    
+    // Calculate final statistics
+    const duplicateFrequency = new Map();
+    duplicateStats.forEach((count) => {
+        if (!duplicateFrequency.has(count)) {
+            duplicateFrequency.set(count, 1);
+        } else {
+            duplicateFrequency.set(count, duplicateFrequency.get(count) + 1);
+        }
+    });
+    
+    console.log(`\n=== Final Statistics ===`);
+    console.log(`Total API calls: ${times}`);
+    console.log(`Total servers found across all requests: ${totalServersFound}`);
+    console.log(`Total unique servers: ${deduplicatedServers.length}`);
+    console.log(`Total duplicate entries: ${totalServersFound - deduplicatedServers.length}`);
+    console.log(`Total countries: ${Object.keys(allCountries).length}`);
+    
+    console.log(`\nDuplicate Frequency Analysis:`);
+    Array.from(duplicateFrequency.entries())
+        .sort((a, b) => a[0] - b[0])
+        .forEach(([frequency, count]) => {
+            console.log(`- Servers appearing ${frequency} time${frequency > 1 ? 's' : ''}: ${count}`);
+        });
+    
+    return {
+        servers: deduplicatedServers,
+        countries: allCountries,
+        statistics: {
+            totalRequests: times,
+            totalServersFound,
+            uniqueServers: deduplicatedServers.length,
+            duplicateEntries: totalServersFound - deduplicatedServers.length,
+            totalCountries: Object.keys(allCountries).length,
+            duplicateFrequency: Object.fromEntries(duplicateFrequency)
+        }
+    };
+}
+
+// Execute the main logic
+getMultipleVPNLists()
+    .then(vpnList => {
+        const lastUpdated = Date.now();
+        
+        // Save both the VPN list and statistics
+        fs.writeFileSync("json/data.json", JSON.stringify({
+            data: vpnList,
+            lastUpdated,
+            statistics: vpnList.statistics
+        }, null, 4), "utf-8");
+        
         // Save the configs and update the readme
         vpnList.servers.forEach((server, index) => {
             const configData = server.openvpn_configdata_base64;
             saveBase64ToFile(configData, `./configs/server_${index}_${server.countryshort}.ovpn`);
-
         });
 
         generateReadme(vpnList);
+        console.log('\nProcess completed successfully!');
     })
     .catch(err => {
-        console.log(err);
+        console.error('Fatal error:', err);
     });

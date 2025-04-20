@@ -4,16 +4,15 @@
 name: VPNGate
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: "*/5 * * * *"
 
 jobs:
   cron:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -26,20 +25,20 @@ jobs:
         working-directory: ./
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: rm -rf ./configs
-    - run: mkdir configs
-    - run: npm install --if-present
-    - run: npm start
-    - name: Commit and push if it changed
-      run: |-
-        git config user.name "fdciabdul"
-        git config user.email "abdulmuttaqin456@gmail.com"
-        git add -A
-        timestamp=$(date '+%F %H:%M:%S %Z')
-        git commit -m "Update Data ${timestamp}" || exit 0
-        git push
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: rm -rf ./configs
+      - run: mkdir configs
+      - run: npm install --if-present
+      - run: npm start
+      - name: Commit and push if it changed
+        run: |-
+          git config user.name "6Kmfi6HP"
+          git config user.email "3kmfi6hp.rtt.icu"
+          git add -A
+          timestamp=$(date '+%F %H:%M:%S %Z')
+          git commit -m "Update Data ${timestamp}" || exit 0
+          git push
