@@ -39,7 +39,7 @@ if (!isMainThread) {
 
 // Main thread logic
 else {
-    async function runMultiThreaded(totalRequests = 1000) {
+    async function runMultiThreaded(totalRequests = 1500) {
         const fileHandler = new FileHandler();
         const cpuCount = os.cpus().length;
         const workerCount = Math.min(cpuCount - 1, 8);
