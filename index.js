@@ -42,7 +42,7 @@ else {
     async function runMultiThreaded(totalRequests = 10000) {
         const fileHandler = new FileHandler();
         const cpuCount = os.cpus().length;
-        const workerCount = 50;
+        const workerCount = 10;
         const requestsPerWorker = Math.ceil(totalRequests / workerCount);
         
         console.log(`Starting VPN data collection with ${workerCount} workers`);
