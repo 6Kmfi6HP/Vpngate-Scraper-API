@@ -19,9 +19,9 @@ if (!isMainThread) {
                 parentPort.postMessage({ type: 'progress', workerId, current: i + 1, total: requestCount });
                 
                 // Wait between requests to avoid rate limiting
-                if (i < requestCount - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
+                // if (i < requestCount - 1) {
+                //     await new Promise(resolve => setTimeout(resolve, 1000));
+                // }
             } catch (error) {
                 console.error(`Worker ${workerId}: Error in request ${i + 1}:`, error.message);
             }
@@ -39,7 +39,7 @@ if (!isMainThread) {
 
 // Main thread logic
 else {
-    async function runMultiThreaded(totalRequests = 10000) {
+    async function runMultiThreaded(totalRequests = 1000) {
         const fileHandler = new FileHandler();
         const cpuCount = os.cpus().length;
         const workerCount = Math.min(cpuCount - 1, 8);
