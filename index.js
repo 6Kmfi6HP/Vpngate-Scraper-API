@@ -86,7 +86,7 @@ async function getMultipleVPNLists(times = 100) {
             
             // Wait for 1 second between requests to avoid rate limiting
             if (i < times - 1) {
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                await new Promise(resolve => setTimeout(resolve, 30000));
             }
         } catch (error) {
             console.error(`Error in attempt ${i + 1}:`, error);
